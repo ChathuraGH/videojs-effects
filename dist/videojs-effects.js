@@ -22,7 +22,10 @@
   ShaderRenderer.prototype.setSource=function(src){ this.source = src; };
   ShaderRenderer.prototype.draw=function(){ var gl=this.gl; if(!gl||!this.currentProgram||!this.source) return; var media=this.source; var w=this.canvas.clientWidth||this.canvas.offsetWidth||media.videoWidth||media.width||640; var h=this.canvas.clientHeight||this.canvas.offsetHeight||media.videoHeight||media.height||360; ensureSize(this.canvas,w,h); gl.viewport(0,0,this.canvas.width,this.canvas.height); gl.clearColor(0,0,0,0); gl.clear(gl.COLOR_BUFFER_BIT); gl.useProgram(this.currentProgram); this.vao.bind(this.currentProgram); gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, this.texture); try{ gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,true); gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,media); }catch(e){ return; } gl.uniform1i(this.uniforms.uTexture,0); gl.uniform2f(this.uniforms.uResolution,this.canvas.width,this.canvas.height); gl.uniform1f(this.uniforms.uIntensity,this.intensity); var t=(performance.now()-this.timeStart)/1000; gl.uniform1f(this.uniforms.uTime,t); gl.drawArrays(gl.TRIANGLE_STRIP,0,4); };
   function plugin(options){
-    var player=this; var settings=Object.assign({}, DEFAULTS, loadSettings()||{}, options||{});
+    var player=this;
+    // Saved settings should take precedence over options supplied by page
+    var saved = loadSettings() || {};
+    var settings = Object.assign({}, DEFAULTS, options || {}, saved || {});
     var EFFECTS_SOURCE=(window.videojsEffectsList&&(window.videojsEffectsList.effects||window.videojsEffectsList))||[]; if(!Array.isArray(EFFECTS_SOURCE)||EFFECTS_SOURCE.length===0){ console.error('[videojs-effects] No effects found'); }
     var EFFECTS=EFFECTS_SOURCE;
     var effectIndex=findEffectIndexByCode(settings.defaultEffectCode, EFFECTS); var effectEnabled=false;
@@ -53,13 +56,17 @@
     settingsGrid.appendChild(makeSetting('Default effect', sDefaultEffect));
     settingsGrid.appendChild(makeSetting('Grid live previews', sLivePreview));
     settingsGrid.appendChild(makeSetting('Thumbnail image URL (for non-live)', sThumbUrl));
-    settingsGrid.appendChild(makeSetting('Hotkey: Toggle modal', sHotToggleModal));
-    settingsGrid.appendChild(makeSetting('Hotkey: Toggle effect', sHotToggleEffect));
-    settingsGrid.appendChild(makeSetting('Hotkey: Next effect', sHotNext));
-    settingsGrid.appendChild(makeSetting('Hotkey: Previous effect', sHotPrev));
-    settingsGrid.appendChild(makeSetting('Hotkey: Intensity up', sHotIntUp));
-    settingsGrid.appendChild(makeSetting('Hotkey: Intensity down', sHotIntDown));
-    settingsGrid.appendChild(makeSetting('Hotkey: Toggle live previews', sHotTogglePreview));
+    // Group hotkeys
+    var hotkeyGroup = el('div', 'vjs-effects-settings-group');
+    hotkeyGroup.appendChild(el('div','vjs-effects-group-title',{text:'Hotkeys'}));
+    hotkeyGroup.appendChild(makeSetting('Toggle modal', sHotToggleModal));
+    hotkeyGroup.appendChild(makeSetting('Toggle effect', sHotToggleEffect));
+    hotkeyGroup.appendChild(makeSetting('Next effect', sHotNext));
+    hotkeyGroup.appendChild(makeSetting('Previous effect', sHotPrev));
+    hotkeyGroup.appendChild(makeSetting('Intensity up', sHotIntUp));
+    hotkeyGroup.appendChild(makeSetting('Intensity down', sHotIntDown));
+    hotkeyGroup.appendChild(makeSetting('Toggle live previews', sHotTogglePreview));
+    settingsGrid.appendChild(hotkeyGroup);
     panel2.appendChild(settingsGrid);
     modal.appendChild(header); modal.appendChild(tabs); modal.appendChild(panel1); modal.appendChild(panel2); overlay.appendChild(modal);
     var playerElPos=getComputedStyle(playerEl).position; if(playerElPos==='static'||!playerElPos) playerEl.style.position='relative'; playerEl.appendChild(overlay);
@@ -86,18 +93,20 @@
     function closeModal(){ overlay.classList.remove('vjs-effects-open'); }
     function toggleModal(){ overlay.classList.toggle('vjs-effects-open'); }
     closeBtn.addEventListener('click', closeModal); overlay.addEventListener('click', function(e){ if(e.target===overlay) closeModal(); });
-    intensityRange.addEventListener('input', function(){ if(overlayRenderer) overlayRenderer.setIntensity(parseFloat(intensityRange.value)); });
-    livePreviewToggle.addEventListener('change', function(){ settings.livePreview=!!livePreviewToggle.checked; saveSettings(settings); if(settings.livePreview){ restartPreviewTimer(); } else { if(previewTimer){ clearInterval(previewTimer); previewTimer=null; } drawThumbnailsOnce(); } });
+    intensityRange.addEventListener('input', function(){ settings.defaultIntensity=parseFloat(intensityRange.value); saveSettings(settings); if(overlayRenderer) overlayRenderer.setIntensity(settings.defaultIntensity); });
+    // Keep both live preview switches in sync
+    livePreviewToggle.addEventListener('change', function(){ settings.livePreview=!!livePreviewToggle.checked; sLivePreview.checked = settings.livePreview; saveSettings(settings); if(settings.livePreview){ restartPreviewTimer(); } else { if(previewTimer){ clearInterval(previewTimer); previewTimer=null; } drawThumbnailsOnce(); } });
+    sLivePreview.addEventListener('change', function(){ livePreviewToggle.checked = sLivePreview.checked; });
     function applySettings(){ settings.defaultIntensity=parseFloat(sDefaultIntensity.value); settings.gridColumns=clamp(parseInt(sGridCols.value,10)||4,2,8); settings.previewSize=clamp(parseInt(sPreviewSize.value,10)||120,64,240); settings.previewFps=clamp(parseInt(sPreviewFps.value,10)||6,1,30); settings.defaultEffectCode=sDefaultEffect.value||settings.defaultEffectCode; settings.livePreview=!!sLivePreview.checked; saveSettings(settings); buildGrid(); if(overlayRenderer) overlayRenderer.setIntensity(settings.defaultIntensity); }
     [sDefaultIntensity,sGridCols,sPreviewSize,sPreviewFps,sDefaultEffect,sLivePreview,sHotToggleModal,sHotToggleEffect,sHotNext,sHotPrev,sHotIntUp,sHotIntDown,sHotTogglePreview,sThumbUrl].forEach(function(inp){ inp.addEventListener('change', applySettings); });
-    function onKeyDown(ev){ var tag=(ev.target&&ev.target.tagName)?ev.target.tagName.toLowerCase():''; if(tag==='input'||tag==='textarea'||ev.target.isContentEditable) return; var code=ev.code||ev.key; if(code===settings.hotkeys.toggleModal){ ev.preventDefault(); toggleModal(); return; } if(code===settings.hotkeys.toggleEffect){ ev.preventDefault(); effectEnabled=!effectEnabled; updateOverlayState(); return; } if(code===settings.hotkeys.nextEffect){ ev.preventDefault(); effectIndex=(effectIndex+1)%EFFECTS.length; ensureOverlayRenderer(); overlayRenderer.setEffect(EFFECTS[effectIndex]); effectEnabled=true; updateOverlayState(); return; } if(code===settings.hotkeys.prevEffect){ ev.preventDefault(); effectIndex=(effectIndex-1+EFFECTS.length)%EFFECTS.length; ensureOverlayRenderer(); overlayRenderer.setEffect(EFFECTS[effectIndex]); effectEnabled=true; updateOverlayState(); return; } if(code===settings.hotkeys.intensityUp){ ev.preventDefault(); var v=clamp(parseFloat(intensityRange.value)+0.05,0,1); intensityRange.value=String(v); if(overlayRenderer) overlayRenderer.setIntensity(v); return; } if(code===settings.hotkeys.intensityDown){ ev.preventDefault(); var v2=clamp(parseFloat(intensityRange.value)-0.05,0,1); intensityRange.value=String(v2); if(overlayRenderer) overlayRenderer.setIntensity(v2); return; } if(code===settings.hotkeys.toggleLivePreview){ ev.preventDefault(); livePreviewToggle.checked=!livePreviewToggle.checked; livePreviewToggle.dispatchEvent(new Event('change')); return; } }
+    function onKeyDown(ev){ var tag=(ev.target&&ev.target.tagName)?ev.target.tagName.toLowerCase():''; if(tag==='input'||tag==='textarea'||ev.target.isContentEditable) return; var code=ev.code||ev.key; if(code===settings.hotkeys.toggleModal){ ev.preventDefault(); toggleModal(); return; } if(code===settings.hotkeys.toggleEffect){ ev.preventDefault(); effectEnabled=!effectEnabled; updateOverlayState(); return; } if(code===settings.hotkeys.nextEffect){ ev.preventDefault(); effectIndex=(effectIndex+1)%EFFECTS.length; ensureOverlayRenderer(); overlayRenderer.setEffect(EFFECTS[effectIndex]); effectEnabled=true; updateOverlayState(); return; } if(code===settings.hotkeys.prevEffect){ ev.preventDefault(); effectIndex=(effectIndex-1+EFFECTS.length)%EFFECTS.length; ensureOverlayRenderer(); overlayRenderer.setEffect(EFFECTS[effectIndex]); effectEnabled=true; updateOverlayState(); return; } if(code===settings.hotkeys.intensityUp){ ev.preventDefault(); var v=clamp(parseFloat(intensityRange.value)+0.05,0,1); intensityRange.value=String(v); settings.defaultIntensity=v; saveSettings(settings); if(overlayRenderer) overlayRenderer.setIntensity(v); return; } if(code===settings.hotkeys.intensityDown){ ev.preventDefault(); var v2=clamp(parseFloat(intensityRange.value)-0.05,0,1); intensityRange.value=String(v2); settings.defaultIntensity=v2; saveSettings(settings); if(overlayRenderer) overlayRenderer.setIntensity(v2); return; } if(code===settings.hotkeys.toggleLivePreview){ ev.preventDefault(); livePreviewToggle.checked=!livePreviewToggle.checked; livePreviewToggle.dispatchEvent(new Event('change')); return; } }
     document.addEventListener('keydown', onKeyDown);
     // Build initial grid immediately
     buildGrid();
     function whenReady(){ if(!techEl||!techEl.videoWidth) return; ensureOverlayRenderer(); updateOverlayState(); }
     player.on('playing', whenReady); player.on('loadedmetadata', whenReady); player.on('resize', whenReady);
     player.on('dispose', function(){ document.removeEventListener('keydown', onKeyDown); if(previewTimer){ clearInterval(previewTimer); previewTimer=null; } if(stopOverlay){ stopOverlay(); stopOverlay=null; } });
-    player.videojsEffectsApi={ setEffectByCode:function(code){ var idx=findEffectIndexByCode(code,EFFECTS); effectIndex=idx; ensureOverlayRenderer(); overlayRenderer.setEffect(EFFECTS[effectIndex]); effectEnabled=(code!=='none'); updateOverlayState(); }, setIntensity:function(v){ intensityRange.value=String(clamp(v,0,1)); if(overlayRenderer) overlayRenderer.setIntensity(parseFloat(intensityRange.value)); }, toggle:function(){ effectEnabled=!effectEnabled; updateOverlayState(); }, open:function(){ overlay.classList.add('vjs-effects-open'); }, close:function(){ overlay.classList.remove('vjs-effects-open'); } };
+    player.videojsEffectsApi={ setEffectByCode:function(code){ var idx=findEffectIndexByCode(code,EFFECTS); effectIndex=idx; ensureOverlayRenderer(); overlayRenderer.setEffect(EFFECTS[effectIndex]); effectEnabled=(code!=='none'); updateOverlayState(); }, setIntensity:function(v){ intensityRange.value=String(clamp(v,0,1)); settings.defaultIntensity=parseFloat(intensityRange.value); saveSettings(settings); if(overlayRenderer) overlayRenderer.setIntensity(parseFloat(intensityRange.value)); }, toggle:function(){ effectEnabled=!effectEnabled; updateOverlayState(); }, open:function(){ overlay.classList.add('vjs-effects-open'); }, close:function(){ overlay.classList.remove('vjs-effects-open'); } };
   }
   videojs.registerPlugin('videojs-effects', plugin);
 })();
