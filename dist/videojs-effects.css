@@ -80,8 +80,9 @@
 
 /* Grid */
 .vjs-effects-grid { display: grid; gap: 10px; max-height: 52vh; overflow: auto; padding-right: 2px; }
-.vjs-effects-tile { background: #181818; border: 1px solid #2a2a2a; border-radius: 6px; overflow: hidden; cursor: pointer; display: flex; flex-direction: column; }
-.vjs-effects-tile:hover { border-color: #3a3a3a; }
+.vjs-effects-tile { background: #181818; border: 1px solid #2a2a2a; border-radius: 6px; overflow: hidden; cursor: pointer; display: flex; flex-direction: column; transition: transform .12s ease, border-color .12s ease, box-shadow .12s ease; }
+.vjs-effects-tile:hover { border-color: #3a7bff; transform: translateY(-1px); box-shadow: 0 4px 14px rgba(0,0,0,.35); }
+.vjs-effects-tile.vjs-effects-selected { border-color: #3a7bff; box-shadow: 0 0 0 2px rgba(58,123,255,0.35) inset; }
 .vjs-effects-tile-header { display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; background: #1c1c1c; font-size: 12px; }
 .vjs-effects-tile-name { color: #ddd; font-weight: 600; }
 .vjs-effects-tile-code { color: #888; font-size: 11px; }
