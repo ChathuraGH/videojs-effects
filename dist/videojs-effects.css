@@ -9,6 +9,12 @@
   z-index: 1;
 }
 
+/* Ensure control bar is always above overlays */
+.video-js .vjs-control-bar {
+  position: relative;
+  z-index: 10;
+}
+
 /* Control bar button */
 .vjs-effects-button.vjs-icon-placeholder .vjs-icon-placeholder:before,
 .vjs-effects-button.vjs-icon-placeholder:before {
@@ -65,7 +71,7 @@
 .vjs-effects-tab.vjs-effects-active { background: #202020; color: #fff; }
 
 /* Tab panels */
-.vjs-effects-panel { display: none; padding: 10px 12px; overflow: hidden; }
+.vjs-effects-panel { display: none; padding: 10px 12px; overflow: auto; flex: 1 1 auto; }
 .vjs-effects-panel.vjs-effects-active { display: block; }
 
 /* Controls area at top of first tab */
