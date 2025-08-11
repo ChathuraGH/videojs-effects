@@ -6,7 +6,7 @@
   height: 100%;
   pointer-events: none;
   display: block;
-  z-index: 2;
+  z-index: 1;
 }
 
 /* Control bar button */
@@ -34,7 +34,7 @@
   color: #eee;
   width: min(920px, 92vw);
   max-height: 80vh;
-  border: 1px solid #333;
+  border: 2px solid #3a7bff;
   border-radius: 8px;
   box-shadow: 0 10px 30px rgba(0,0,0,0.6);
   display: flex;
