@@ -1,3 +1,15 @@
+/* Icon mappings for control button */
+.vjs-effects-button.vjs-icon-ef-magic:before { content: "✨"; }
+.vjs-effects-button.vjs-icon-ef-spark:before { content: "⚡"; }
+.vjs-effects-button.vjs-icon-ef-palette:before { content: "🎨"; }
+.vjs-effects-button.vjs-icon-ef-gear:before { content: "⚙️"; }
+.vjs-effects-button.vjs-icon-ef-wand:before { content: "🪄"; }
+.vjs-effects-button.vjs-icon-ef-crystal:before { content: "🔮"; }
+.vjs-effects-button.vjs-icon-ef-camera:before { content: "📸"; }
+.vjs-effects-button.vjs-icon-ef-wave:before { content: "🌊"; }
+.vjs-effects-button.vjs-icon-ef-leaf:before { content: "🌿"; }
+.vjs-effects-button.vjs-icon-ef-star:before { content: "⭐"; }
+
 /* Overlay canvas for WebGL rendering */
 .vjs-effects-canvas {
   position: absolute;
