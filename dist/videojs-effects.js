@@ -20,7 +20,28 @@
   ShaderRenderer.prototype.setEffect=function(effect){ var p=this._programForFragment(effect.fragment); this.currentProgram=p; this.uniforms={ uTexture:this.gl.getUniformLocation(p,'uTexture'), uResolution:this.gl.getUniformLocation(p,'uResolution'), uIntensity:this.gl.getUniformLocation(p,'uIntensity'), uTime:this.gl.getUniformLocation(p,'uTime') }; };
   ShaderRenderer.prototype.setIntensity=function(v){ this.intensity=clamp(v,0,1); };
   ShaderRenderer.prototype.setSource=function(src){ this.source = src; };
-  ShaderRenderer.prototype.draw=function(){ var gl=this.gl; if(!gl||!this.currentProgram||!this.source) return; var media=this.source; var w=this.canvas.clientWidth||this.canvas.offsetWidth||media.videoWidth||media.width||640; var h=this.canvas.clientHeight||this.canvas.offsetHeight||media.videoHeight||media.height||360; ensureSize(this.canvas,w,h); gl.viewport(0,0,this.canvas.width,this.canvas.height); gl.clearColor(0,0,0,0); gl.clear(gl.COLOR_BUFFER_BIT); gl.useProgram(this.currentProgram); this.vao.bind(this.currentProgram); gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, this.texture); try{ /* do not flip to avoid upside-down */ gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false); gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,media); }catch(e){ return; } gl.uniform1i(this.uniforms.uTexture,0); gl.uniform2f(this.uniforms.uResolution,this.canvas.width,this.canvas.height); gl.uniform1f(this.uniforms.uIntensity,this.intensity); var t=(performance.now()-this.timeStart)/1000; gl.uniform1f(this.uniforms.uTime,t); gl.drawArrays(gl.TRIANGLE_STRIP,0,4); };
+  ShaderRenderer.prototype.draw=function(){
+    var gl=this.gl; if(!gl||!this.currentProgram||!this.source) return;
+    var media=this.source;
+    var parent=this.canvas.parentElement || this.canvas;
+    var rect = parent.getBoundingClientRect ? parent.getBoundingClientRect() : null;
+    var w = rect ? Math.max(2, Math.floor(rect.width)) : (parent.clientWidth||this.canvas.offsetWidth||media.videoWidth||640);
+    var h = rect ? Math.max(2, Math.floor(rect.height)) : (parent.clientHeight||this.canvas.offsetHeight||media.videoHeight||360);
+    ensureSize(this.canvas,w,h);
+    gl.viewport(0, 0, this.canvas.width, this.canvas.height);
+    gl.clearColor(0,0,0,0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.useProgram(this.currentProgram);
+    this.vao.bind(this.currentProgram);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, this.texture);
+    try{ gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false); gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,media); }catch(e){ return; }
+    gl.uniform1i(this.uniforms.uTexture,0);
+    gl.uniform2f(this.uniforms.uResolution,this.canvas.width,this.canvas.height);
+    gl.uniform1f(this.uniforms.uIntensity,this.intensity);
+    var t=(performance.now()-this.timeStart)/1000; gl.uniform1f(this.uniforms.uTime,t);
+    gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
+  };
   function plugin(options){
     var player=this;
     var saved = loadSettings() || {};
@@ -30,7 +51,7 @@
     var effectIndex=findEffectIndexByCode(settings.defaultEffectCode, EFFECTS); var effectEnabled = settings.defaultEffectCode !== 'none';
     var playerEl=player.el(); var techEl=player.el().getElementsByClassName('vjs-tech')[0];
     var overlayCanvas=el('canvas','vjs-effects-canvas'); overlayCanvas.style.display='none'; var overlayRenderer=null;
-    var overlay=el('div','vjs-effects-modal-overlay'); var modal=el('div','vjs-effects-modal'); var header=el('div','vjs-effects-modal-header'); var title=el('div','vjs-effects-modal-title',{text:'Video Effects'}); var closeBtn=el('button','vjs-effects-close',{'aria-label':'Close',text:'✕'}); header.appendChild(title); header.appendChild(closeBtn);
+    var overlay=el('div','vjs-effects-modal-overlay'); var modal=el('div','vjs-effects-modal'); var header=el('div','vjs-effects-modal-header'); var title=el('div','vjs-effects-modal-title',{text:'Video Effects'}); var closeBtn=el('button','vjs-effects-close',{'aria-label':'Close', text:'✕'}); header.appendChild(title); header.appendChild(closeBtn);
     var tabs=el('div','vjs-effects-tabs'); var tab1Btn=el('button','vjs-effects-tab vjs-effects-active',{text:'Effects'}); var tab2Btn=el('button','vjs-effects-tab',{text:'Settings'}); tabs.appendChild(tab1Btn); tabs.appendChild(tab2Btn);
     var panel1=el('div','vjs-effects-panel vjs-effects-active'); var panel2=el('div','vjs-effects-panel');
     var controlsRow=el('div','vjs-effects-controls-row'); var intensityLabel=el('label',null,{text:'Intensity'}); var intensityRange=el('input'); intensityRange.type='range'; intensityRange.min='0'; intensityRange.max='1'; intensityRange.step='0.01'; intensityRange.value=String(settings.defaultIntensity);
@@ -87,7 +108,6 @@
     [sDefaultIntensity,sGridCols,sPreviewSize,sPreviewFps,sDefaultEffect,sLivePreview,sHotToggleModal,sHotToggleEffect,sHotNext,sHotPrev,sHotIntUp,sHotIntDown,sHotTogglePreview,sThumbUrl].forEach(function(inp){ inp.addEventListener('change', applySettings); });
     function onKeyDown(ev){ var tag=(ev.target&&ev.target.tagName)?ev.target.tagName.toLowerCase():''; if(tag==='input'||tag==='textarea'||ev.target.isContentEditable) return; var code=ev.code||ev.key; if(code===settings.hotkeys.toggleModal){ ev.preventDefault(); toggleModal(); return; } if(code===settings.hotkeys.toggleEffect){ ev.preventDefault(); effectEnabled=!effectEnabled; updateOverlayState(); return; } if(code===settings.hotkeys.nextEffect){ ev.preventDefault(); effectIndex=(effectIndex+1)%EFFECTS.length; ensureOverlayRenderer(); overlayRenderer.setEffect(EFFECTS[effectIndex]); effectEnabled=true; updateOverlayState(); markSelected(); return; } if(code===settings.hotkeys.prevEffect){ ev.preventDefault(); effectIndex=(effectIndex-1+EFFECTS.length)%EFFECTS.length; ensureOverlayRenderer(); overlayRenderer.setEffect(EFFECTS[effectIndex]); effectEnabled=true; updateOverlayState(); markSelected(); return; } if(code===settings.hotkeys.intensityUp){ ev.preventDefault(); var v=clamp(parseFloat(intensityRange.value)+0.05,0,1); intensityRange.value=String(v); settings.defaultIntensity=v; saveSettings(settings); if(overlayRenderer) overlayRenderer.setIntensity(v); if(!settings.livePreview){ drawThumbnailsOnce(); } return; } if(code===settings.hotkeys.intensityDown){ ev.preventDefault(); var v2=clamp(parseFloat(intensityRange.value)-0.05,0,1); intensityRange.value=String(v2); settings.defaultIntensity=v2; saveSettings(settings); if(overlayRenderer) overlayRenderer.setIntensity(v2); if(!settings.livePreview){ drawThumbnailsOnce(); } return; } if(code===settings.hotkeys.toggleLivePreview){ ev.preventDefault(); livePreviewToggle.checked=!livePreviewToggle.checked; livePreviewToggle.dispatchEvent(new Event('change')); return; } }
     document.addEventListener('keydown', onKeyDown);
-    // Build initial grid and apply saved default effect
     buildGrid(); effectIndex = findEffectIndexByCode(settings.defaultEffectCode, EFFECTS); markSelected(); if(settings.defaultEffectCode!=='none'){ ensureOverlayRenderer(); overlayRenderer.setEffect(EFFECTS[effectIndex]); overlayRenderer.setIntensity(settings.defaultIntensity); effectEnabled=true; updateOverlayState(); }
     function whenReady(){ if(!techEl||!techEl.videoWidth) return; ensureOverlayRenderer(); updateOverlayState(); }
     player.on('playing', whenReady); player.on('loadedmetadata', whenReady); player.on('resize', whenReady); player.on('fullscreenchange', whenReady);
