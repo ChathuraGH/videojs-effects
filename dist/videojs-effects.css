@@ -98,7 +98,7 @@
 .vjs-effects-tile-header { display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; background: #1c1c1c; font-size: 12px; }
 .vjs-effects-tile-name { color: #ddd; font-weight: 600; }
 .vjs-effects-tile-code { color: #888; font-size: 11px; }
-.vjs-effects-tile-canvas { display: block; width: 100%; height: auto; aspect-ratio: 1 / 1; background: #0a0a0a; }
+.vjs-effects-tile-canvas { display: block; width: 100%; height: auto; aspect-ratio: 1 / 1; background: #0a0a0a; image-rendering: pixelated; image-rendering: crisp-edges; }
 
 /* Settings panel */
 .vjs-effects-settings { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 18px; }
@@ -108,8 +108,8 @@
 .vjs-effects-hotkey-input { user-select: none; }
 
 /* Hotkey group */
-.vjs-effects-settings-group { grid-column: 1 / -1; border: 1px solid #2a2a2a; padding: 8px 10px; border-radius: 6px; background: #141414; }
-.vjs-effects-group-title { font-weight: 700; font-size: 12px; color: #cbd5ff; margin-bottom: 8px; }
+.vjs-effects-settings-group { grid-column: 1 / -1; border: 1px solid #2a2a2a; padding: 8px 10px; border-radius: 6px; background: #141414; display: grid; grid-template-columns: 1fr 1fr; gap: 12px 16px; }
+.vjs-effects-group-title { grid-column: 1 / -1; font-weight: 700; font-size: 12px; color: #cbd5ff; margin-bottom: 4px; }
 
 /* Toggle */
 .vjs-effects-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 999px; background: #1d1d1d; border: 1px solid #2a2a2a; color: #bbb; font-size: 12px; }
