@@ -40,20 +40,32 @@
   function ensureSize(canvas,w,h){ var r=window.devicePixelRatio||1; var W=Math.max(2,Math.floor(w*r)); var H=Math.max(2,Math.floor(h*r)); if(canvas.width!==W||canvas.height!==H){ canvas.width=W; canvas.height=H; canvas.style.width=w+'px'; canvas.style.height=h+'px'; return true;} return false; }
   function findEffectIndexByCode(code,list){ for(var i=0;i<list.length;i++){ if(list[i].code===code) return i; } return 0; }
 
-  function ShaderRenderer(canvas,source){ this.canvas=canvas; this.source=source; this.gl=null; this.texture=null; this.vao=null; this.programCache={}; this.currentProgram=null; this.uniforms=null; this.intensity=0.7; this.timeStart=performance.now(); this._init(); }
+  function ShaderRenderer(canvas,source){ this.canvas=canvas; this.source=source; this.gl=null; this.texture=null; this.vao=null; this.programCache={}; this.currentProgram=null; this.uniforms=null; this.intensity=0.7; this.timeStart=performance.now(); this._sizeOverride=null; this._init(); }
   ShaderRenderer.prototype._init=function(){ var out=createGl(this.canvas); this.gl=out.gl; this.vao=out.vao; this.texture=out.texture; };
   ShaderRenderer.prototype._programForFragment=function(fragment){ if(this.programCache[fragment]) return this.programCache[fragment]; var p=linkProgram(this.gl, BASE_VERTEX_SHADER, fragment); this.programCache[fragment]=p; return p; };
   ShaderRenderer.prototype.setEffect=function(effect){ var p=this._programForFragment(effect.fragment); this.currentProgram=p; this.uniforms={ uTexture:this.gl.getUniformLocation(p,'uTexture'), uResolution:this.gl.getUniformLocation(p,'uResolution'), uIntensity:this.gl.getUniformLocation(p,'uIntensity'), uTime:this.gl.getUniformLocation(p,'uTime') }; };
   ShaderRenderer.prototype.setIntensity=function(v){ this.intensity=clamp(v,0,1); };
   ShaderRenderer.prototype.setSource=function(src){ this.source = src; };
+  ShaderRenderer.prototype.setTextureFilteringNearest=function(on){ var gl=this.gl; gl.bindTexture(gl.TEXTURE_2D, this.texture); var f = on? gl.NEAREST : gl.LINEAR; gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, f); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, f); };
+  ShaderRenderer.prototype.setSizeOverride=function(w,h,isDevicePixels){ this._sizeOverride={w:w,h:h,device:!!isDevicePixels}; };
+  ShaderRenderer.prototype.clearSizeOverride=function(){ this._sizeOverride=null; };
   ShaderRenderer.prototype.draw=function(){
     var gl=this.gl; if(!gl||!this.currentProgram||!this.source) return;
     var media=this.source;
-    var parent=this.canvas.parentElement || this.canvas;
-    var rect = parent.getBoundingClientRect ? parent.getBoundingClientRect() : null;
-    var w = rect ? Math.max(2, Math.floor(rect.width)) : (parent.clientWidth||this.canvas.offsetWidth||media.videoWidth||640);
-    var h = rect ? Math.max(2, Math.floor(rect.height)) : (parent.clientHeight||this.canvas.offsetHeight||media.videoHeight||360);
-    ensureSize(this.canvas,w,h);
+    if (this._sizeOverride){
+      var o=this._sizeOverride; var dpr=window.devicePixelRatio||1;
+      if (o.device){
+        if (this.canvas.width!==o.w || this.canvas.height!==o.h){ this.canvas.width=o.w; this.canvas.height=o.h; this.canvas.style.width=Math.max(1,Math.round(o.w/dpr))+'px'; this.canvas.style.height=Math.max(1,Math.round(o.h/dpr))+'px'; }
+      } else {
+        ensureSize(this.canvas, o.w, o.h);
+      }
+    } else {
+      var parent=this.canvas.parentElement || this.canvas;
+      var rect = parent.getBoundingClientRect ? parent.getBoundingClientRect() : null;
+      var w = rect ? Math.max(2, Math.floor(rect.width)) : (parent.clientWidth||this.canvas.offsetWidth||media.videoWidth||640);
+      var h = rect ? Math.max(2, Math.floor(rect.height)) : (parent.clientHeight||this.canvas.offsetHeight||media.videoHeight||360);
+      ensureSize(this.canvas,w,h);
+    }
     gl.viewport(0, 0, this.canvas.width, this.canvas.height);
     gl.clearColor(0,0,0,0);
     gl.clear(gl.COLOR_BUFFER_BIT);
@@ -175,11 +187,11 @@
 
     var previewSharedCanvas=document.createElement('canvas'); previewSharedCanvas.width=settings.previewSize; previewSharedCanvas.height=settings.previewSize; var previewRenderer=null; var previewImage=new Image(); previewImage.crossOrigin='anonymous'; previewImage.src=settings.thumbnailUrl || 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&w=512&q=60';
     var previewRenders=[]; var previewTimer=null; var tiles=[];
-    function ensurePreviewRenderer(source){ if(!previewRenderer){ previewRenderer=new ShaderRenderer(previewSharedCanvas, source); } else { previewRenderer.setSource(source); } }
+    function ensurePreviewRenderer(source){ if(!previewRenderer){ previewRenderer=new ShaderRenderer(previewSharedCanvas, source); previewRenderer.setTextureFilteringNearest(true); } else { previewRenderer.setSource(source); } }
     function sizeTileCanvasHiDPI(tileCanvas){ var dpr = window.devicePixelRatio || 1; var cw = Math.max(1, Math.floor(tileCanvas.clientWidth)); var ch = Math.max(1, Math.floor(tileCanvas.clientHeight)); var W = Math.max(1, Math.floor(cw * dpr)); var H = Math.max(1, Math.floor(ch * dpr)); if (tileCanvas.width !== W || tileCanvas.height !== H){ tileCanvas.width = W; tileCanvas.height = H; } }
     function drawTilePreview(effect, tileCanvas){ sizeTileCanvasHiDPI(tileCanvas); var media = settings.livePreview ? techEl : (previewImage && previewImage.complete ? previewImage : null); if(!media) return; ensurePreviewRenderer(media); // match offscreen GL canvas size to tile
     if (previewSharedCanvas.width !== tileCanvas.width || previewSharedCanvas.height !== tileCanvas.height){ previewSharedCanvas.width = tileCanvas.width; previewSharedCanvas.height = tileCanvas.height; }
-    previewRenderer.setEffect(effect); previewRenderer.setIntensity(settings.defaultIntensity); previewRenderer.draw(); var ctx = tileCanvas.getContext('2d'); ctx.imageSmoothingEnabled = false; ctx.clearRect(0,0,tileCanvas.width,tileCanvas.height); ctx.drawImage(previewSharedCanvas, 0, 0, tileCanvas.width, tileCanvas.height); }
+    previewRenderer.setEffect(effect); previewRenderer.setIntensity(settings.defaultIntensity); previewRenderer.setSizeOverride(tileCanvas.width, tileCanvas.height, true); previewRenderer.draw(); var ctx = tileCanvas.getContext('2d'); ctx.imageSmoothingEnabled = false; ctx.clearRect(0,0,tileCanvas.width,tileCanvas.height); ctx.drawImage(previewSharedCanvas, 0, 0, tileCanvas.width, tileCanvas.height); }
     function markSelected(){ tiles.forEach(function(t){ t.classList.toggle('vjs-effects-selected', t.dataset.code === (EFFECTS[effectIndex] && EFFECTS[effectIndex].code)); }); }
     function createTile(effect){ var tile=el('div','vjs-effects-tile'); tile.dataset.code = effect.code; var head=el('div','vjs-effects-tile-header'); head.appendChild(el('div','vjs-effects-tile-name',{text: effect.name})); head.appendChild(el('div','vjs-effects-tile-code',{text: effect.code})); var canvas=el('canvas','vjs-effects-tile-canvas'); canvas.width=settings.previewSize; canvas.height=settings.previewSize; tile.appendChild(head); tile.appendChild(canvas); tile.addEventListener('click', function(){ if(effect.code==='none'){ effectIndex = findEffectIndexByCode('none', EFFECTS); effectEnabled=false; } else { effectIndex= findEffectIndexByCode(effect.code, EFFECTS); ensureOverlayRenderer(); overlayRenderer.setEffect(EFFECTS[effectIndex]); overlayRenderer.setIntensity(parseFloat(intensityRange.value)); effectEnabled=true; } settings.defaultEffectCode = effect.code; saveSettings(settings); updateOverlayState(); markSelected(); }); previewRenders.push({ effect:effect, canvas:canvas }); tiles.push(tile); return tile; }
     function buildGrid(){ grid.innerHTML=''; grid.style.gridTemplateColumns='repeat(' + settings.gridColumns + ', minmax(0, 1fr))'; previewRenders=[]; tiles=[]; EFFECTS.forEach(function(eff){ grid.appendChild(createTile(eff)); }); markSelected(); restartPreviewTimer(); if(!settings.livePreview){ if (previewImage.complete) { drawThumbnailsOnce(); } else { previewImage.onload = drawThumbnailsOnce; } } }
