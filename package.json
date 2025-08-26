@@ -1,0 +1,29 @@
+{
+  "name": "videojs-effects",
+  "version": "1.0.0",
+  "description": "Video.js plugin providing WebGL shader effects with UI, previews, and hotkeys",
+  "main": "dist/videojs-effects.js",
+  "style": "dist/videojs-effects.css",
+  "files": [
+    "dist/*",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "videojs",
+    "video.js",
+    "plugin",
+    "webgl",
+    "effects",
+    "shader"
+  ],
+  "author": "",
+  "license": "MIT",
+  "peerDependencies": {
+    "video.js": ">=8.0.0"
+  },
+  "scripts": {
+    "build": "cp -r src/*.js dist/ && cp -r src/*.css dist/",
+    "start": "npx http-server . -p 8080"
+  }
+}

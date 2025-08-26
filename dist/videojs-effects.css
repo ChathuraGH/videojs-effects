@@ -1,0 +1,119 @@
+/* Icon mappings for control button */
+.vjs-effects-button.vjs-icon-ef-magic:before { content: "✨"; }
+.vjs-effects-button.vjs-icon-ef-spark:before { content: "⚡"; }
+.vjs-effects-button.vjs-icon-ef-palette:before { content: "🎨"; }
+.vjs-effects-button.vjs-icon-ef-gear:before { content: "⚙️"; }
+.vjs-effects-button.vjs-icon-ef-wand:before { content: "🪄"; }
+.vjs-effects-button.vjs-icon-ef-crystal:before { content: "🔮"; }
+.vjs-effects-button.vjs-icon-ef-camera:before { content: "📸"; }
+.vjs-effects-button.vjs-icon-ef-wave:before { content: "🌊"; }
+.vjs-effects-button.vjs-icon-ef-leaf:before { content: "🌿"; }
+.vjs-effects-button.vjs-icon-ef-star:before { content: "⭐"; }
+
+/* Overlay canvas for WebGL rendering */
+.vjs-effects-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  display: block;
+  z-index: 1;
+}
+
+/* Ensure control bar is always above overlays */
+.video-js .vjs-control-bar {
+  z-index: 10;
+}
+
+/* Control bar button */
+.vjs-effects-button.vjs-icon-placeholder .vjs-icon-placeholder:before,
+.vjs-effects-button.vjs-icon-placeholder:before {
+  content: "\f10b";
+}
+
+/* Modal overlay */
+.vjs-effects-modal-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.vjs-effects-modal-overlay.vjs-effects-open { display: flex; }
+
+/* Modal container */
+.vjs-effects-modal {
+  background: #111;
+  color: #eee;
+  width: min(920px, 92vw);
+  max-height: 80vh;
+  border: 2px solid #3a7bff;
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+}
+
+.vjs-effects-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: #1a1a1a;
+  border-bottom: 1px solid #2a2a2a;
+}
+
+.vjs-effects-modal-title { font-size: 14px; font-weight: 600; }
+
+.vjs-effects-close {
+  background: transparent; border: none; color: #bbb; font-size: 18px; line-height: 1; padding: 4px 8px; border-radius: 4px; cursor: pointer;
+}
+.vjs-effects-close:hover { background: #222; color: #fff; }
+
+/* Tabs */
+.vjs-effects-tabs { display: flex; gap: 0; border-bottom: 1px solid #2a2a2a; }
+.vjs-effects-tab { flex: 1 1 auto; text-align: center; padding: 10px 8px; background: #161616; color: #aaa; border: none; cursor: pointer; font-weight: 600; }
+.vjs-effects-tab.vjs-effects-active { background: #202020; color: #fff; }
+
+/* Tab panels */
+.vjs-effects-panel { display: none; padding: 10px 12px; overflow: auto; flex: 1 1 auto; }
+.vjs-effects-panel.vjs-effects-active { display: block; }
+
+/* Controls area at top of first tab */
+.vjs-effects-controls-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 10px; }
+.vjs-effects-controls-row label { font-size: 12px; color: #bbb; }
+.vjs-effects-controls-row input[type="range"] { width: 200px; }
+
+/* Grid */
+.vjs-effects-grid { display: grid; gap: 10px; max-height: 52vh; overflow: auto; padding-right: 2px; }
+.vjs-effects-tile { background: #181818; border: 1px solid #2a2a2a; border-radius: 6px; overflow: hidden; cursor: pointer; display: flex; flex-direction: column; transition: transform .12s ease, border-color .12s ease, box-shadow .12s ease; }
+.vjs-effects-tile:hover { border-color: #3a7bff; transform: translateY(-1px); box-shadow: 0 4px 14px rgba(0,0,0,.35); }
+.vjs-effects-tile.vjs-effects-selected { border-color: #3a7bff; box-shadow: 0 0 0 2px rgba(58,123,255,0.35) inset; }
+.vjs-effects-tile-header { display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; background: #1c1c1c; font-size: 12px; }
+.vjs-effects-tile-name { color: #ddd; font-weight: 600; }
+.vjs-effects-tile-code { color: #888; font-size: 11px; }
+.vjs-effects-tile-canvas { display: block; width: 100%; height: auto; aspect-ratio: 1 / 1; background: #0a0a0a; image-rendering: pixelated; image-rendering: crisp-edges; }
+
+/* Settings panel */
+.vjs-effects-settings { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 18px; }
+.vjs-effects-settings .vjs-effects-setting { display: flex; flex-direction: column; gap: 6px; }
+.vjs-effects-settings label { font-size: 12px; color: #bbb; }
+.vjs-effects-settings input, .vjs-effects-settings select { background: #1a1a1a; color: #eee; border: 1px solid #2a2a2a; border-radius: 4px; padding: 6px 8px; }
+.vjs-effects-hotkey-input { user-select: none; }
+
+/* Hotkey group */
+.vjs-effects-settings-group { grid-column: 1 / -1; border: 1px solid #2a2a2a; padding: 8px 10px; border-radius: 6px; background: #141414; display: grid; grid-template-columns: 1fr 1fr; gap: 12px 16px; }
+.vjs-effects-group-title { grid-column: 1 / -1; font-weight: 700; font-size: 12px; color: #cbd5ff; margin-bottom: 4px; }
+
+/* Toggle */
+.vjs-effects-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 999px; background: #1d1d1d; border: 1px solid #2a2a2a; color: #bbb; font-size: 12px; }
+.vjs-effects-toggle { appearance: none; width: 34px; height: 18px; background: #333; border-radius: 999px; position: relative; outline: none; cursor: pointer; }
+.vjs-effects-toggle:checked { background: #2b7cff; }
+.vjs-effects-toggle:before { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; background: #eee; border-radius: 50%; transition: transform 0.15s ease; }
+.vjs-effects-toggle:checked:before { transform: translateX(16px); }
